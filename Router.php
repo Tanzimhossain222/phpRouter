@@ -20,8 +20,8 @@ class Router
         return preg_match($pattern, $url, $matches) ? $matches : false;
     }
 
-    // Registers a GET route and calls the callback if the URL matches the pattern
-    public static function get($pattern, $callback)
+    // Processes the route and calls the callback if the URL matches the pattern
+    private static function process($pattern, $callback)
     {
         $pattern = "~^{$pattern}/?$~";
         $params = self::getMatches($pattern);
@@ -33,11 +33,39 @@ class Router
         }
     }
 
+    // Registers a GET route
+    public static function get($pattern, $callback)
+    {
+        if ($_SERVER["REQUEST_METHOD"] === "GET") {
+            self::process($pattern, $callback);
+        }
+    }
+
+    // Registers a POST route
+    public static function post($pattern, $callback)
+    {
+        if ($_SERVER["REQUEST_METHOD"] !== "POST") {
+            return;
+        }
+
+        self::process($pattern, $callback);
+    }
+
+    // Registers a DELETE route
+    public static function delete($pattern, $callback)
+    {
+        if ($_SERVER["REQUEST_METHOD"] !== "DELETE") {
+            return;
+        }
+
+        self::process($pattern, $callback);
+    }
+
     // Outputs a 404 message if no routes matched
     public static function cleanup()
     {
         if (self::$nomatch) {
-            echo "404 - No Route Matched";
+            echo "404 - Not Found";
         }
     }
 }
