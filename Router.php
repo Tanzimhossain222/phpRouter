@@ -26,10 +26,31 @@ class Router
         $pattern = "~^{$pattern}/?$~";
         $params = self::getMatches($pattern);
 
-        if ($params && is_callable($callback)) {
-            self::$nomatch = false;
+        if ($params) {
             $functionArguments = array_slice($params, 1);
-            $callback(...$functionArguments);
+            self::$nomatch = false;
+
+            if (is_callable($callback)) {
+                if (is_array($callback)) {
+                    $className = $callback[0];
+                    $methodName = $callback[1];
+                    $instance = $className::getInstance();
+                    $instance->$methodName(...$functionArguments);
+                } else {
+                    $callback(...$functionArguments);
+                }
+            } else if (is_array($callback)) {
+                $className = $callback[0];
+                $methodName = $callback[1];
+                $instance = $className::getInstance();
+                $instance->$methodName(...$functionArguments);
+            } else if (is_string($callback)) {
+                $parts = explode("@", $callback);
+                $className = "APP\Controllers\\" . $parts[0];
+                $methodName = $parts[1];
+                $instance = $className::getInstance();
+                $instance->$methodName(...$functionArguments);
+            }
         }
     }
 
@@ -44,21 +65,17 @@ class Router
     // Registers a POST route
     public static function post($pattern, $callback)
     {
-        if ($_SERVER["REQUEST_METHOD"] !== "POST") {
-            return;
+        if ($_SERVER["REQUEST_METHOD"] === "POST") {
+            self::process($pattern, $callback);
         }
-
-        self::process($pattern, $callback);
     }
 
     // Registers a DELETE route
     public static function delete($pattern, $callback)
     {
-        if ($_SERVER["REQUEST_METHOD"] !== "DELETE") {
-            return;
+        if ($_SERVER["REQUEST_METHOD"] === "DELETE") {
+            self::process($pattern, $callback);
         }
-
-        self::process($pattern, $callback);
     }
 
     // Outputs a 404 message if no routes matched
