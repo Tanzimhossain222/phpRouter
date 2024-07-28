@@ -15,3 +15,6 @@ Router::get('/hello', function () {
 Router::get('/hello/world', function () {
     echo  'Hello, World!  This is the hello/world page.';
 });
+
+
+Router::cleanup();

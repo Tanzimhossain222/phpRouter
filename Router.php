@@ -2,63 +2,42 @@
 
 namespace APP\Routing;
 
-/**
- * Router class for handling URL routing.
- */
 class Router
 {
+    // Flag to determine if no routes matched
+    private static $nomatch = true;
 
-    /**
-     * Retrieves the current URL from the server request.
-     *
-     * @return string The current URL.
-     */
+    // Retrieves the current URL from the server request
     private static function getUrl()
     {
         return $_SERVER["REQUEST_URI"];
     }
 
-    /**
-     * Matches the current URL against a given pattern.
-     *
-     * @param string $pattern The regular expression pattern to match.
-     * @return array|false The matched results or false if no match.
-     */
+    // Matches the current URL against a given pattern
     private static function getMatches($pattern)
     {
-        // Get the current URL
         $url = self::getUrl();
-
-        // Check if the URL matches the pattern
-        if (preg_match($pattern, $url, $matches)) {
-            return $matches;
-        }
-        
-        // Return false if no match is found
-        return false;
+        return preg_match($pattern, $url, $matches) ? $matches : false;
     }
 
-    /**
-     * Registers a GET route and calls the corresponding callback if the URL matches the pattern.
-     *
-     * @param string $pattern The URL pattern to match.
-     * @param callable $callback The callback function to execute if the URL matches the pattern.
-     */
-    static function get($pattern, $callback)
+    // Registers a GET route and calls the callback if the URL matches the pattern
+    public static function get($pattern, $callback)
     {
-        // Prepare the pattern by wrapping it with delimiters
-        $pattern = "~^{$pattern}$~";
-        
-        // Get the matches for the URL
+        $pattern = "~^{$pattern}/?$~";
         $params = self::getMatches($pattern);
 
-        // If matches are found and the callback is callable
-        if ($params) {
-            if (is_callable($callback)) {
-                // Remove the first element (full match) and pass the rest as arguments to the callback
-                $functionArguments = array_slice($params, 1);
-                $callback(...$functionArguments);
-            }
+        if ($params && is_callable($callback)) {
+            self::$nomatch = false;
+            $functionArguments = array_slice($params, 1);
+            $callback(...$functionArguments);
+        }
+    }
+
+    // Outputs a 404 message if no routes matched
+    public static function cleanup()
+    {
+        if (self::$nomatch) {
+            echo "404 - No Route Matched";
         }
     }
 }
